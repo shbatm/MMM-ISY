@@ -1,0 +1,52 @@
+/*
+ * Custom CSS File for MMM-ISY Module
+ */
+
+ .isyOuterWrapper {
+    position: absolute;
+    display: block;
+    left: 50%;
+    top: 50%;
+    width: 65%;
+    vertical-align: middle;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    overflow: hidden;
+ }
+
+ .isyInnerWrapper {
+    position: relative;
+    vertical-align: middle;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding-bottom: 100%;
+ }
+
+/* Class for the _F_loor _P_lan layer*/
+ .isyFP {
+    position: absolute;
+    width: 100%;
+    left: 50%;
+    top: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+ }
+
+/* Class for the _O_verlay _N_ode */
+ .isyON {  
+    opacity: 0;
+ }
+
+ .isyFlashNode {
+    -webkit-animation: fadeinout 4s cubic-bezier(0.8, 0.5, 1, .5)  forwards infinite;
+    animation: fadeinout 4s cubic-bezier(0.8, 0.5, 1, .5) forwards infinite;
+ }
+
+@-webkit-keyframes fadeinout {
+    50% { opacity: 1; }
+}
+
+@keyframes fadeinout {
+    50% { opacity: 1; }
+}
