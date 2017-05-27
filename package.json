@@ -1,10 +1,21 @@
 {
   "name": "MMM-ISY",
   "version": "1.0.0",
-  "description": "Todo: Insert description here!",
+  "description": "Displays ISY devicie updates on floor plan",
   "main": "MMM-ISY.js",
   "author": "shbatm",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/shbatm/mmm-isy.git"
+  },
+  "dependencies": {
+    "isy-js": "^0.4.4"
+  },
+  "bugs": {
+    "url": "https://bitbucket.org/shbatm/mmm-isy/issues"
+  },
+  "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
   "devDependencies": {
     "stylelint": "latest",
     "grunt": "latest",

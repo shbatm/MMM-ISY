@@ -11,10 +11,10 @@ Module.register("MMM-ISY", {
 	defaults: {
 		updateInterval: 60000,
 		retryDelay: 5000,
-		maxWidth: '75%',
-		floorplan: 'img/floorplan.png',
+		maxWidth: '90%',
+		floorplan: 'floorplan.png',
 		nodes: [],
-		variableMapping: [] // Format: { type: 1/2, id: varID, node: 'nodes Name', onVal: 1, offVal: 0 },
+		variableMapping: [] // Format: { type: '1'/'2', id: 'varID', node: 'nodes Name', onVal: 1, offVal: 0, flash: true },
 	},
 
 	requiresVersion: "2.1.0", // Required version of MagicMirror
@@ -26,68 +26,8 @@ Module.register("MMM-ISY", {
 
 		//Flag for check if module is loaded
 		this.loaded = false;
-
-		// Schedule update timer.
-/*		this.getData();
-		setInterval(function() {
-			self.updateDom();
-		}, this.config.updateInterval);*/
 	},
 
-	/*
-	 * getData
-	 * function example return data and show it in the module wrapper
-	 * get a URL request
-	 *
-	 */
-/*	getData: function() {
-		var self = this;
-
-		var urlApi = "https://jsonplaceholder.typicode.com/posts/1";
-		var retry = true;
-
-		var dataRequest = new XMLHttpRequest();
-		dataRequest.open("GET", urlApi, true);
-		dataRequest.onreadystatechange = function() {
-			console.log(this.readyState);
-			if (this.readyState === 4) {
-				console.log(this.status);
-				if (this.status === 200) {
-					self.processData(JSON.parse(this.response));
-				} else if (this.status === 401) {
-					self.updateDom(self.config.animationSpeed);
-					Log.error(self.name, this.status);
-					retry = false;
-				} else {
-					Log.error(self.name, "Could not load data.");
-				}
-				if (retry) {
-					self.scheduleUpdate((self.loaded) ? -1 : self.config.retryDelay);
-				}
-			}
-		};
-		dataRequest.send();
-	},
-*/
-
-	/* scheduleUpdate()
-	 * Schedule next update.
-	 *
-	 * argument delay number - Milliseconds before next update.
-	 *  If empty, this.config.updateInterval is used.
-	 */
-/*	scheduleUpdate: function(delay) {
-		var nextLoad = this.config.updateInterval;
-		if (typeof delay !== "undefined" && delay >= 0) {
-			nextLoad = delay;
-		}
-		nextLoad = nextLoad ;
-		var self = this;
-		setTimeout(function() {
-			self.getData();
-		}, nextLoad);
-	},
-*/
 	getDom: function() {
 		var self = this;
 
@@ -101,7 +41,7 @@ Module.register("MMM-ISY", {
 		}
 		// If this.dataRequest is not empty
 		if (this.deviceList) {
-			wrapper = generateFloorplan();
+			wrapper = this.generateFloorplan();
 		}
 		return wrapper;
 	},
@@ -111,22 +51,40 @@ Module.register("MMM-ISY", {
 
 		var outerWrapper = document.createElement("div");
 		outerWrapper.className = "isyOuterWrapper";
+		outerWrapper.style.cssText = "width:" + this.config.maxWidth + ";";
 
 		var innerWrapper = document.createElement("div");
 		innerWrapper.className = "isyInnerWrapper";
 
 		var floorplan = document.createElement("img");
-		floorplan.src = this.config.floorplan;
+		floorplan.src = this.file('/img/' + this.config.floorplan);
 		floorplan.className = "isyFP";
 		floorplan.id = "ISYFloorPlan";
 		innerWrapper.appendChild(floorplan);
 
-		for (var i = 0; i < this.config.nodes.length; i++) {
-			var node = document.createElement("img");
-			node.id = "ISYNode_" + this.config.nodes[i];
-			node.className = "isyFP isyON";
-			node.src = "img/" + this.config.nodes[i] + ".png";
-			innerWrapper.appendChild(node);
+		if (typeof this.deviceList !== "undefined") {
+			var node = null;
+			for (var i = 0; i < this.deviceList.dev.length; i++) {
+				node = document.createElement("img");
+				node.id = "ISYNode_" + this.config.nodes[this.deviceList.dev[i].nodeId];
+				node.className = "isyFP isyON";
+				node.src = this.file("/img/" + this.config.nodes[this.deviceList.dev[i].nodeId] + ".png");
+				if (typeof this.deviceList.dev[i].currentState === "number") {
+					node.style.cssText = "opacity: " + (this.deviceList.dev[i].currentState / 255.0);
+				}
+				innerWrapper.appendChild(node);
+			}
+			for (i = 0; i < this.deviceList.var.length; i++) {
+				node = document.createElement("img");
+				var nodeName = this.config.variableMapping[this.deviceList.var[i].mapId].node;
+				node.id = "ISYNode_" + nodeName;
+				node.className = "isyFP isyON";
+				node.src = this.file("/img/" + nodeName + ".png");
+				if (this.deviceList.var[i].value === this.config.variableMapping[this.deviceList.var[i].mapId].onVal) {
+					node.classList.add("isyFlashNode");
+				}
+				innerWrapper.appendChild(node);
+			}
 		}
 
 		outerWrapper.appendChild(innerWrapper);
@@ -156,16 +114,35 @@ Module.register("MMM-ISY", {
 			this.updateDom();
 		}
 		if (notification === 'DEVICE_CHANGED') {
+			console.log(payload);
 			// Do Device Update
 		}
 		if (notification === 'VARIABLE_CHANGED') {
+			this.deviceList.var[payload.index] = payload.var;
+			console.log(payload.var);
+
+			if (payload.var.value === this.config.variableMapping[payload.var.mapId].onVal) {
+				if (typeof this.config.variableMapping[payload.var.mapId].flash !== "undefined" &&
+						this.config.variableMapping[payload.var.mapId].flash) {
+					document.getElementById("ISYNode_" + this.config.variableMapping[payload.var.mapId].node).classList.add("isyFlashNode");
+				} else {
+					document.getElementById("ISYNode_" + this.config.variableMapping[payload.var.mapId].node).style.cssText = "opacity: 1;";
+				}
+			} else if (payload.var.value === this.config.variableMapping[payload.var.mapId].offVal) {
+				if (typeof this.config.variableMapping[payload.var.mapId].flash !== "undefined" &&
+						this.config.variableMapping[payload.var.mapId].flash) {
+					document.getElementById("ISYNode_" + this.config.variableMapping[payload.var.mapId].node).classList.remove("isyFlashNode");
+				} else {
+					document.getElementById("ISYNode_" + this.config.variableMapping[payload.var.mapId].node).style.cssText = "opacity: 0;";
+				}
+			}
 			// Do Variable mapping and update
 		}
 	},
 
     notificationReceived: function (notification, payload, sender) {
     	if (notification === 'ALL_MODULES_STARTED') {
-			this.sendSocketNotification("INITIALIZE_ISY");
+			this.sendSocketNotification("INITIALIZE_ISY", this.config);
     	}
 		if (notification === 'DOM_OBJECTS_CREATED') {
 
