@@ -11,6 +11,7 @@
 
 var NodeHelper = require("node_helper");
 var ISY = require('isy-js');
+var isyConfig = require('./isy.json');
 
 module.exports = NodeHelper.create({
     config: null,
@@ -20,11 +21,18 @@ module.exports = NodeHelper.create({
 
     isyInitialize: function() {
         that = this;
+        this.isy = new ISY.ISY(isyConfig.address, 
+								isyConfig.username, 
+								isyConfig.password, 
+								isyConfig.elkEnabled, 
+								this.handleChanged.bind(that), 
+								isyConfig.useHttps,
+								isyConfig.scenesInDeviceList, 
+								isyConfig.enableDebugLogging, 
+								this.handleVariableChanged.bind(that));
 
-        this.isy = new ISY.ISY('127.0.0.1:3000', 'admin', 'password', false, this.handleChanged.bind(that), false, false, true, this.handleVariableChanged.bind(that));
-        //this.isy = new ISY.ISY('home.timjbond.com:25000', 'admin', 'password', false, this.handleChanged, true, false, true, this.handleVariableChanged);
         this.isy.initialize(this.handleInitialized.bind(that));
-        console.log('initialize completed');
+        console.log('ISY initialization completed');
     },
 
     handleInitialized: function() {
@@ -53,16 +61,14 @@ module.exports = NodeHelper.create({
         } else {
             console.log("Got variable list. Variable Count: "+this.variableList.length);
             for (var i = 0; i < this.variableList.length; i++) {
-                for (var v = 0; v < this.config.variableMapping.length; v++) {
-                    if (this.variableList[i].type === this.config.variableMapping[v].type &&
-                        this.variableList[i].id === this.config.variableMapping[v].id) {
-                        var clippedISYVariable = this.variableList[i];
-                        delete clippedISYVariable.isy;
-                        clippedISYVariable.mapId = v;
-                        this.variables.push(clippedISYVariable);
-                        break;
-                    }
-                }
+				var localVar = this.config.variableMapping.find(x => (x.type === this.variableList[i].type && x.id === this.variableList[i].id));
+				
+				if (typeof localVar === "undefined") { continue; }
+				
+				var clippedISYVariable = this.variableList[i];
+                delete clippedISYVariable.isy;
+                clippedISYVariable.mapId = this.config.variableMapping.indexOf(localVar);
+                this.variables.push(clippedISYVariable);
             }
             // console.log(this.variableList);
         }
@@ -71,18 +77,57 @@ module.exports = NodeHelper.create({
 
     handleChanged: function(isy, device) {
         var logMessage = 'From isy: '+isy.address+' device changed: '+device.name;
+		//logMessage += this.detailedDeviceLogMessage(device);
+        console.log(logMessage); 
+        
+        // Check if the device is in our list
+        var localDev = this.devices.find(x => x.address === device.address);
+        
+        if (typeof localDev === "undefined") { return; }
+		delete device.isy;
+		device.nodeId = localDev.nodeId;
+		this.devices.splice(this.devices.indexOf(localDev), 1, device);
+        this.sendSocketNotification("DEVICE_CHANGED", device);
+    },
+
+    handleVariableChanged: function(isy, variable) {
+        var logMessage = "From isy: "+isy.address+' variable changed: '+variable;
+		console.log(logMessage);
 
         // Check if the device is in our list
-        var handleDevice = false;
-        for (var i = 0; i < this.devices.length; i++) {
-            if (this.devices[i].address === device.address) {
-                handleDevice = true;
-                break;
-            }
-        }
-        if (!handleDevice) { return; }
+		var localVar = this.variables.find(x => (x.type === variable.type && x.id === variable.id));
 
-        switch (device.deviceType) {
+		if (typeof localVar === "undefined") { return; }
+		delete variable.isy;
+        variable.mapId = localVar.mapId;
+		this.variables.splice(this.variables.indexOf(localVar), 1, variable);
+		this.sendSocketNotification("VARIABLE_CHANGED", variable);
+    },
+
+    // Override socketNotificationReceived method.
+
+    /* socketNotificationReceived(notification, payload)
+     * This method is called when a socket notification arrives.
+     *
+     * argument notification string - The identifier of the noitication.
+     * argument payload mixed - The payload of the notification.
+     */
+    socketNotificationReceived: function(notification, payload) {
+        if (notification === "INITIALIZE_ISY") {
+            console.log("Initializing ISY Connection...");
+            this.config = payload;
+            this.isyInitialize();
+        } else if (notification === "REFRESH_DEVICE_LIST") {
+            this.handleInitialized();
+        } else {
+            console.log(this.name + " socket notification recevied: " + notification);
+        }
+    },
+    
+        
+    detailedDeviceLogMessage: function(device) {
+		var logMessage = '';
+		switch (device.deviceType) {
             case isy.DEVICE_TYPE_FAN:
                 logMessage += ' fan state: '+device.getCurrentFanState();
                 break;
@@ -119,47 +164,9 @@ module.exports = NodeHelper.create({
             default:
                 logMessage += ' unknown device, cannot parse state';
         }
+        return logMessage;
+	},
 
-        console.log(logMessage);    
-        this.sendSocketNotification("DEVICE_CHANGED", device);
-    },
-
-    handleVariableChanged: function(isy, variable) {
-        var logMessage = "From isy: "+isy.address+' variable changed: '+variable;
-
-        // Check if the device is in our list
-        var handleVariable = false;
-        for (var i = 0; i < this.variables.length; i++) {
-            if (this.variables[i].id === variable.id && this.variables[i].type === variable.type) {
-                var mapId = this.variables[i].mapId;
-                delete variable.isy;
-                variable.mapId = mapId;
-                this.variables[i] = variable;
-                this.sendSocketNotification("VARIABLE_CHANGED", {index: i, var: variable});
-                break;
-            }
-        }
-    },
-
-    // Override socketNotificationReceived method.
-
-    /* socketNotificationReceived(notification, payload)
-     * This method is called when a socket notification arrives.
-     *
-     * argument notification string - The identifier of the noitication.
-     * argument payload mixed - The payload of the notification.
-     */
-    socketNotificationReceived: function(notification, payload) {
-        if (notification === "INITIALIZE_ISY") {
-            console.log("Initializing ISY Connection...");
-            this.config = payload;
-            this.isyInitialize();
-        } else if (notification === "REFRESH_DEVICE_LIST") {
-            this.handleInitialized();
-        } else {
-            console.log(this.name + " socket notification recevied: " + notification);
-        }
-    },
 
 
 });

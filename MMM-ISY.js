@@ -14,6 +14,7 @@ Module.register("MMM-ISY", {
 		maxWidth: '90%',
 		floorplan: 'floorplan.png',
 		nodes: [],
+		invertedNodes: [],
 		variableMapping: [] // Format: { type: '1'/'2', id: 'varID', node: 'nodes Name', onVal: 1, offVal: 0, flash: true },
 	},
 
@@ -70,7 +71,11 @@ Module.register("MMM-ISY", {
 				node.className = "isyFP isyON";
 				node.src = this.file("/img/" + this.config.nodes[this.deviceList.dev[i].nodeId] + ".png");
 				if (typeof this.deviceList.dev[i].currentState === "number") {
-					node.style.cssText = "opacity: " + (this.deviceList.dev[i].currentState / 255.0);
+					if (this.config.invertedNodes.indexOf(this.deviceList.dev[i].address.replace(/\s/g,"")) === -1) {
+						node.style.cssText = "opacity: " + (this.deviceList.dev[i].currentState / 255.0);
+					} else {
+						node.style.cssText = "opacity: " + ((255 - this.deviceList.dev[i].currentState) / 255.0);
+					}
 				}
 				innerWrapper.appendChild(node);
 			}
@@ -81,7 +86,12 @@ Module.register("MMM-ISY", {
 				node.className = "isyFP isyON";
 				node.src = this.file("/img/" + nodeName + ".png");
 				if (this.deviceList.var[i].value === this.config.variableMapping[this.deviceList.var[i].mapId].onVal) {
-					node.classList.add("isyFlashNode");
+					if (typeof this.config.variableMapping[this.deviceList.var[i].mapId].flash !== "undefined" &&
+						this.config.variableMapping[this.deviceList.var[i].mapId].flash) {
+						node.classList.add("isyFlashNode");	
+					} else {
+						node.style.cssText = "opacity: 1;";
+					}
 				}
 				innerWrapper.appendChild(node);
 			}
@@ -114,29 +124,34 @@ Module.register("MMM-ISY", {
 			this.updateDom();
 		}
 		if (notification === 'DEVICE_CHANGED') {
-			console.log(payload);
-			// Do Device Update
-		}
-		if (notification === 'VARIABLE_CHANGED') {
-			this.deviceList.var[payload.index] = payload.var;
-			console.log(payload.var);
-
-			if (payload.var.value === this.config.variableMapping[payload.var.mapId].onVal) {
-				if (typeof this.config.variableMapping[payload.var.mapId].flash !== "undefined" &&
-						this.config.variableMapping[payload.var.mapId].flash) {
-					document.getElementById("ISYNode_" + this.config.variableMapping[payload.var.mapId].node).classList.add("isyFlashNode");
+			this.deviceList.dev.splice(payload.nodeId, 1, payload);
+			node = document.getElementById("ISYNode_" + this.config.nodes[payload.nodeId]);
+			if (typeof payload.currentState === "number") {
+				if (this.config.invertedNodes.indexOf(payload.address.replace(/\s/g,"")) === -1) {
+					node.style.cssText = "opacity: " + (payload.currentState / 255.0);
 				} else {
-					document.getElementById("ISYNode_" + this.config.variableMapping[payload.var.mapId].node).style.cssText = "opacity: 1;";
-				}
-			} else if (payload.var.value === this.config.variableMapping[payload.var.mapId].offVal) {
-				if (typeof this.config.variableMapping[payload.var.mapId].flash !== "undefined" &&
-						this.config.variableMapping[payload.var.mapId].flash) {
-					document.getElementById("ISYNode_" + this.config.variableMapping[payload.var.mapId].node).classList.remove("isyFlashNode");
-				} else {
-					document.getElementById("ISYNode_" + this.config.variableMapping[payload.var.mapId].node).style.cssText = "opacity: 0;";
+					node.style.cssText = "opacity: " + ((255 - payload.currentState) / 255.0);
 				}
 			}
-			// Do Variable mapping and update
+		}
+		if (notification === 'VARIABLE_CHANGED') {
+			this.deviceList.var.splice(payload.mapId, 1, payload);
+			
+			if (payload.value === this.config.variableMapping[payload.mapId].onVal) {
+				if (typeof this.config.variableMapping[payload.mapId].flash !== "undefined" &&
+						this.config.variableMapping[payload.mapId].flash) {
+					document.getElementById("ISYNode_" + this.config.variableMapping[payload.mapId].node).classList.add("isyFlashNode");
+				} else {
+					document.getElementById("ISYNode_" + this.config.variableMapping[payload.mapId].node).style.cssText = "opacity: 1;";
+				}
+			} else if (payload.value === this.config.variableMapping[payload.mapId].offVal) {
+				if (typeof this.config.variableMapping[payload.mapId].flash !== "undefined" &&
+						this.config.variableMapping[payload.mapId].flash) {
+					document.getElementById("ISYNode_" + this.config.variableMapping[payload.mapId].node).classList.remove("isyFlashNode");
+				} else {
+					document.getElementById("ISYNode_" + this.config.variableMapping[payload.mapId].node).style.cssText = "opacity: 0;";
+				}
+			}
 		}
 	},
 

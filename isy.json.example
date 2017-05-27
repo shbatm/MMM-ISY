@@ -1,0 +1,9 @@
+{
+  "address": "127.0.0.1:3000",
+  "username": "admin",
+  "password": "password",
+  "elkEnabled": false,
+  "useHttps": false,
+  "scenesInDeviceList": false,
+  "enableDebugLogging": true
+}
