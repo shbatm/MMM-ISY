@@ -15,7 +15,8 @@ Module.register("MMM-ISY", {
 		floorplan: 'floorplan.png',
 		nodes: [],
 		invertedNodes: [],
-		variableMapping: [] // Format: { type: '1'/'2', id: 'varID', node: 'nodes Name', onVal: 1, offVal: 0, flash: true },
+		variableMapping: [], // Format: { type: '1'/'2', id: 'varID', node: 'nodes Name', onVal: 1, offVal: 0, flash: true },
+		thermostats: {},
 	},
 
 	requiresVersion: "2.1.0", // Required version of MagicMirror
@@ -63,42 +64,106 @@ Module.register("MMM-ISY", {
 		floorplan.id = "ISYFloorPlan";
 		innerWrapper.appendChild(floorplan);
 
-		if (typeof this.deviceList !== "undefined") {
-			var node = null;
-			for (var i = 0; i < this.deviceList.dev.length; i++) {
-				node = document.createElement("img");
-				node.id = "ISYNode_" + this.config.nodes[this.deviceList.dev[i].nodeId];
-				node.className = "isyFP isyON";
-				node.src = this.file("/img/" + this.config.nodes[this.deviceList.dev[i].nodeId] + ".png");
-				if (typeof this.deviceList.dev[i].currentState === "number") {
-					if (this.config.invertedNodes.indexOf(this.deviceList.dev[i].address.replace(/\s/g,"")) === -1) {
-						node.style.cssText = "opacity: " + (this.deviceList.dev[i].currentState / 255.0);
-					} else {
-						node.style.cssText = "opacity: " + ((255 - this.deviceList.dev[i].currentState) / 255.0);
-					}
+		var node = null;
+		for (var i = 0; i < this.deviceList.dev.length; i++) {
+			node = document.createElement("img");
+			node.id = "ISYNode_" + this.config.nodes[this.deviceList.dev[i].nodeId];
+			node.className = "isyFP isyON";
+			node.src = this.file("/img/" + this.config.nodes[this.deviceList.dev[i].nodeId].replace(/\s/g,"") + ".png");
+			if (typeof this.deviceList.dev[i].currentState === "number") {
+				if (this.config.invertedNodes.indexOf(this.deviceList.dev[i].address) === -1) {
+					node.style.cssText = "opacity: " + (this.deviceList.dev[i].currentState / 255.0);
+				} else {
+					node.style.cssText = "opacity: " + ((255 - this.deviceList.dev[i].currentState) / 255.0);
 				}
-				innerWrapper.appendChild(node);
 			}
-			for (i = 0; i < this.deviceList.var.length; i++) {
-				node = document.createElement("img");
-				var nodeName = this.config.variableMapping[this.deviceList.var[i].mapId].node;
-				node.id = "ISYNode_" + nodeName;
-				node.className = "isyFP isyON";
-				node.src = this.file("/img/" + nodeName + ".png");
-				if (this.deviceList.var[i].value === this.config.variableMapping[this.deviceList.var[i].mapId].onVal) {
-					if (typeof this.config.variableMapping[this.deviceList.var[i].mapId].flash !== "undefined" &&
-						this.config.variableMapping[this.deviceList.var[i].mapId].flash) {
-						node.classList.add("isyFlashNode");	
-					} else {
-						node.style.cssText = "opacity: 1;";
-					}
+			innerWrapper.appendChild(node);
+		}
+		for (i = 0; i < this.deviceList.var.length; i++) {
+			node = document.createElement("img");
+			var nodeName = this.config.variableMapping[this.deviceList.var[i].mapId].node;
+			node.id = "ISYNode_" + nodeName;
+			node.className = "isyFP isyON";
+			node.src = this.file("/img/" + nodeName + ".png");
+			if (this.deviceList.var[i].value === this.config.variableMapping[this.deviceList.var[i].mapId].onVal) {
+				if (typeof this.config.variableMapping[this.deviceList.var[i].mapId].flash !== "undefined" &&
+					this.config.variableMapping[this.deviceList.var[i].mapId].flash) {
+					node.classList.add("isyFlashNode");	
+				} else {
+					node.style.cssText = "opacity: 1;";
 				}
-				innerWrapper.appendChild(node);
+			}
+			innerWrapper.appendChild(node);
+		}
+		for (var tst in this.deviceList.tst) {
+			if (this.deviceList.tst[tst].address.endsWith("1")) {
+				var tstat = this.generateThermostat(this.deviceList.tst[tst]);
+				innerWrapper.appendChild(tstat);
 			}
 		}
-
 		outerWrapper.appendChild(innerWrapper);
 		return outerWrapper;
+	},
+
+	generateThermostat: function(device) {
+		// Pass "undefined" to function to generate a sample DOM structure
+		if (typeof device === "undefined") {
+			device = {};
+			device.address = "upstairs";
+			device.status = { currTemp: 72, coolSetPoint: 75, heatSetPoint: 55, humidity: 55, mode: "heating"};
+		}
+		
+		var tstatConf = this.config.thermostats[device.address.replace(/\s[0-9]$/,"")];
+		console.log(tstatConf);
+
+		var isyTstatWrapper = document.createElement("div");
+		isyTstatWrapper.className = "isyTstatWrapper";
+		isyTstatWrapper.id = "ISYNode_" + device.address + "_TSTAT";
+		
+		if ("showSetPoints" in tstatConf && tstatConf.showSetPoints) {
+			var isyHeatSetPoint = document.createElement("div");
+			isyHeatSetPoint.className = "isyHeatSetPoint";
+			isyHeatSetPoint.id = "ISYNode_" + device.address + "_HSP";
+			isyHeatSetPoint.innerHTML = device.status.heatSetPoint + "<sup>&deg;F</sup>";
+			isyTstatWrapper.appendChild(isyHeatSetPoint);
+		}
+
+		var isyCurrTemp = document.createElement("div");
+		isyCurrTemp.className = "isyCurrTemp";
+		if (device.status.mode == "heating") {
+			isyCurrTemp.classList.add("isyHeating");
+		} else if (device.status.mode == "cooling") {
+			isyCurrTemp.classList.add("isyCooling");
+		}
+		isyCurrTemp.id = "ISYNode_" + device.node + "_CT";
+		isyCurrTemp.innerHTML = device.status.currTemp + "<sup>&deg;F</sup>";
+		isyTstatWrapper.appendChild(isyCurrTemp);
+
+		if ("showSetPoints" in tstatConf && tstatConf.showSetPoints) {
+			var isyCoolSetPoint = document.createElement("div");
+			isyCoolSetPoint.className = "isyCoolSetPoint";
+			isyCoolSetPoint.id = "ISYNode_" + device.address + "_CSP";
+			isyCoolSetPoint.innerHTML = device.status.coolSetPoint + "<sup>&deg;F</sup>";
+			isyTstatWrapper.appendChild(isyCoolSetPoint);	
+		}
+
+		var br = document.createElement("br");
+		br.style.cssText = "clear: left;";
+		isyTstatWrapper.appendChild(br);
+
+		if ("showRelHum" in tstatConf && tstatConf.showRelHum) {
+			var isyHumidity = document.createElement("div");
+			isyHumidity.className = "isyHumidity";
+			isyHumidity.id = "ISYNode_" + device.address + "_RH";
+			isyHumidity.innerHTML = device.status.humidity + "%<sup>RH</sup>";
+			isyTstatWrapper.appendChild(isyHumidity);			
+		}
+		
+		if ("position" in tstatConf) {
+			isyTstatWrapper.style.cssText = tstatConf.position;
+		}
+
+		return isyTstatWrapper;
 	},
 
 	getScripts: function() {
@@ -118,6 +183,7 @@ Module.register("MMM-ISY", {
 	// socketNotificationReceived from helper
 	socketNotificationReceived: function (notification, payload) {
 		if (notification === 'DEVICE_LIST_RECEIVED') {
+			this.deviceList = {};
 			this.deviceList = payload;
 			console.log(this.deviceList);
 			this.loaded = true;
@@ -133,6 +199,10 @@ Module.register("MMM-ISY", {
 					node.style.cssText = "opacity: " + ((255 - payload.currentState) / 255.0);
 				}
 			}
+		}
+		if (notification === 'THERMOSTAT_CHANGED') {
+			// Handle Thermostat Change
+			console.log(payload);
 		}
 		if (notification === 'VARIABLE_CHANGED') {
 			this.deviceList.var.splice(payload.mapId, 1, payload);

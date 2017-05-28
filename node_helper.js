@@ -8,6 +8,7 @@
  * By shbatm
  * MIT Licensed.
  */
+/* jshint node: true, esversion: 6*/
 
 var NodeHelper = require("node_helper");
 var ISY = require('isy-js');
@@ -18,6 +19,7 @@ module.exports = NodeHelper.create({
 
     devices: [],
     variables: [],
+    tstats: [],
 
     isyInitialize: function() {
         that = this;
@@ -36,21 +38,29 @@ module.exports = NodeHelper.create({
     },
 
     handleInitialized: function() {
-        this.devces = [];
-        this.variables = [];
+        this.devices.length = 0;
+        this.variables.length = 0;
+        this.tstats = {};
         this.deviceList = this.isy.getDeviceList();
         if(this.deviceList === null) {
             console.log("No device list returned!");
         } else {
             console.log("Got device list. Device count: "+this.deviceList.length);
-            for(var index = 0; index < this.deviceList.length; index++ ) {
-                if (this.config.nodes.indexOf(this.deviceList[index].address.replace(/\s/g,"")) > -1) {
+            for (var index = 0; index < this.deviceList.length; index++ ) {
+                if (this.config.nodes.indexOf(this.deviceList[index].address) > -1) {
                     // Filter the devices we want
                     var clippedISYDevice = this.deviceList[index];
                     delete clippedISYDevice.isy;    // Remove the circular reference so we can pass the object to the module
-                    clippedISYDevice.nodeId = this.config.nodes.indexOf(this.deviceList[index].address.replace(/\s/g,""));
+                    clippedISYDevice.nodeId = this.config.nodes.indexOf(this.deviceList[index].address);
                     this.devices.push(clippedISYDevice);
-                }
+                } else if (this.deviceList[index].address.replace(/\s[0-9]$/,'') in this.config.thermostats) {
+					// Thermostats are added in groups to the list so we can get the cooling/heating info too
+					this.tstats[this.deviceList[index].address] = this.deviceList[index];
+					delete this.tstats[this.deviceList[index].address].isy;
+					if (this.deviceList[index].address.endsWith("1")) {
+						this.tstats[this.deviceList[index].address].status = this.deviceList[index].getFormattedStatus();
+					}
+				}
                 //console.log("Device: "+this.deviceList[index].name+", "+this.deviceList[index].deviceType+", "+this.deviceList[index].address+", "+this.deviceList[index].deviceFriendlyName);
             }
         }
@@ -72,7 +82,7 @@ module.exports = NodeHelper.create({
             }
             // console.log(this.variableList);
         }
-        this.sendSocketNotification("DEVICE_LIST_RECEIVED", { dev: this.devices, var: this.variables });
+        this.sendSocketNotification("DEVICE_LIST_RECEIVED", { dev: this.devices, var: this.variables, tst: this.tstats });
     },
 
     handleChanged: function(isy, device) {
@@ -83,7 +93,21 @@ module.exports = NodeHelper.create({
         // Check if the device is in our list
         var localDev = this.devices.find(x => x.address === device.address);
         
-        if (typeof localDev === "undefined") { return; }
+        if (typeof localDev === "undefined") { 
+			if (device.address in this.tstats) {
+				if (device.address.endsWith("1")) {
+					// Handle Thermostat Event
+					delete device.isy;
+					this.tstats[device.address] = device;
+					this.tstats[device.address].status = device.getFormattedStatus();
+					this.sendSocketNotification("THERMOSTAT_CHANGED", device);
+					return;
+				}
+				
+				console.log("Received a Thermostat Event but don't know how to handle that...");
+			} else { return; }
+		}
+		
 		delete device.isy;
 		device.nodeId = localDev.nodeId;
 		this.devices.splice(this.devices.indexOf(localDev), 1, device);
@@ -161,6 +185,9 @@ module.exports = NodeHelper.create({
             case isy.DEVICE_TYPE_SCENE:
                 logMessage += ' scene. light state: '+device.getCurrentLightState()+' dimm Level: '+device.getCurrentLightDimState();
                 break;
+            case isy.DEVICE_TYPE_THERMOSTAT:
+				logMessage += ' thermostat. ' + device.getFormattedStatus();
+				break;
             default:
                 logMessage += ' unknown device, cannot parse state';
         }
