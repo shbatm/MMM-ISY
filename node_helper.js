@@ -20,6 +20,7 @@ module.exports = NodeHelper.create({
     devices: [],
     variables: [],
     tstats: [],
+    callNo: 0,
 
     isyInitialize: function() {
         that = this;
@@ -32,7 +33,6 @@ module.exports = NodeHelper.create({
 								isyConfig.scenesInDeviceList, 
 								isyConfig.enableDebugLogging, 
 								this.handleVariableChanged.bind(that));
-
         this.isy.initialize(this.handleInitialized.bind(that));
         console.log('ISY initialization completed');
     },
@@ -54,10 +54,10 @@ module.exports = NodeHelper.create({
                     clippedISYDevice.nodeId = this.config.nodes.indexOf(this.deviceList[index].address);
                     this.devices.push(clippedISYDevice);
                 } else if (this.deviceList[index].address.replace(/\s[0-9]$/,'') in this.config.thermostats) {
-					// Thermostats are added in groups to the list so we can get the cooling/heating info too
-					this.tstats[this.deviceList[index].address] = this.deviceList[index];
-					delete this.tstats[this.deviceList[index].address].isy;
 					if (this.deviceList[index].address.endsWith("1")) {
+						// Thermostats are added in groups to the list so we can get the cooling/heating info too
+						this.tstats[this.deviceList[index].address] = this.deviceList[index];
+						delete this.tstats[this.deviceList[index].address].isy;
 						this.tstats[this.deviceList[index].address].status = this.deviceList[index].getFormattedStatus();
 					}
 				}
@@ -102,13 +102,12 @@ module.exports = NodeHelper.create({
 					this.tstats[device.address].status = device.getFormattedStatus();
 					this.sendSocketNotification("THERMOSTAT_CHANGED", device);
 					return;
-				}
-				
-				console.log("Received a Thermostat Event but don't know how to handle that...");
+				} else { return; }
 			} else { return; }
 		}
 		
 		delete device.isy;
+		console.log(device);
 		device.nodeId = localDev.nodeId;
 		this.devices.splice(this.devices.indexOf(localDev), 1, device);
         this.sendSocketNotification("DEVICE_CHANGED", device);

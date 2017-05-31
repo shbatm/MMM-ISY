@@ -17,7 +17,10 @@ Module.register("MMM-ISY", {
 		invertedNodes: [],
 		variableMapping: [], // Format: { type: '1'/'2', id: 'varID', node: 'nodes Name', onVal: 1, offVal: 0, flash: true },
 		thermostats: {},
+		showDimmingLevels: false,
 	},
+	
+	deviceListCount: 0,
 
 	requiresVersion: "2.1.0", // Required version of MagicMirror
 
@@ -47,6 +50,16 @@ Module.register("MMM-ISY", {
 		}
 		return wrapper;
 	},
+	
+	getOpacity: function(device) {
+		var opacity = 0;
+		if (this.config.invertedNodes.indexOf(device.address) === -1) {
+			var opacity = (this.config.showDimmingLevels) ? (device.currentState / 255.0) : (device.currentState > 0) ? 1 : 0;
+		} else {
+			var opacity = (this.config.showDimmingLevels) ? ((255 - device.currentState) / 255.0) : (device.currentState > 0) ? 0 : 1;
+		}
+		return opacity;
+	},
 
 	generateFloorplan: function() {
 		var self = this;
@@ -71,11 +84,7 @@ Module.register("MMM-ISY", {
 			node.className = "isyFP isyON";
 			node.src = this.file("/img/" + this.config.nodes[this.deviceList.dev[i].nodeId].replace(/\s/g,"") + ".png");
 			if (typeof this.deviceList.dev[i].currentState === "number") {
-				if (this.config.invertedNodes.indexOf(this.deviceList.dev[i].address) === -1) {
-					node.style.cssText = "opacity: " + (this.deviceList.dev[i].currentState / 255.0);
-				} else {
-					node.style.cssText = "opacity: " + ((255 - this.deviceList.dev[i].currentState) / 255.0);
-				}
+				node.style.cssText = "opacity: " + this.getOpacity(this.deviceList.dev[i]) + ";";
 			}
 			innerWrapper.appendChild(node);
 		}
@@ -114,8 +123,7 @@ Module.register("MMM-ISY", {
 		}
 		
 		var tstatConf = this.config.thermostats[device.address.replace(/\s[0-9]$/,"")];
-		console.log(tstatConf);
-
+		
 		var isyTstatWrapper = document.createElement("div");
 		isyTstatWrapper.className = "isyTstatWrapper";
 		isyTstatWrapper.id = "ISYNode_" + device.address + "_TSTAT";
@@ -130,9 +138,9 @@ Module.register("MMM-ISY", {
 
 		var isyCurrTemp = document.createElement("div");
 		isyCurrTemp.className = "isyCurrTemp";
-		if (device.status.mode == "heating") {
+		if (device.status.currentStatus == "heating") {
 			isyCurrTemp.classList.add("isyHeating");
-		} else if (device.status.mode == "cooling") {
+		} else if (device.status.currentStatus == "cooling") {
 			isyCurrTemp.classList.add("isyCooling");
 		}
 		isyCurrTemp.id = "ISYNode_" + device.node + "_CT";
@@ -190,19 +198,18 @@ Module.register("MMM-ISY", {
 			this.updateDom();
 		}
 		if (notification === 'DEVICE_CHANGED') {
+			console.log("Device Changed: " + payload.address);
 			this.deviceList.dev.splice(payload.nodeId, 1, payload);
 			node = document.getElementById("ISYNode_" + this.config.nodes[payload.nodeId]);
 			if (typeof payload.currentState === "number") {
-				if (this.config.invertedNodes.indexOf(payload.address.replace(/\s/g,"")) === -1) {
-					node.style.cssText = "opacity: " + (payload.currentState / 255.0);
-				} else {
-					node.style.cssText = "opacity: " + ((255 - payload.currentState) / 255.0);
-				}
+				node.style.cssText = "opacity: " + this.getOpacity(payload) + ";";
 			}
 		}
 		if (notification === 'THERMOSTAT_CHANGED') {
-			// Handle Thermostat Change
-			console.log(payload);
+			var tstat = document.getElementById("ISYNode_" + payload.address + "_TSTAT");
+			var prt = tstat.parentNode;
+			prt.removeChild(tstat)
+			prt.appendChild(this.generateThermostat(payload));
 		}
 		if (notification === 'VARIABLE_CHANGED') {
 			this.deviceList.var.splice(payload.mapId, 1, payload);
