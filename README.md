@@ -22,15 +22,15 @@ var config = {
 ## Screenshots
 Live view:
 
-![](https://raw.githubusercontent.com/shbatm/MMM-ISY/tree/master/screenshots/floorplan_preview.png)
+![](https://raw.githubusercontent.com/shbatm/MMM-ISY/master/screenshots/floorplan_preview.png)
 
 Floorplan Base Layer:
 
-![](https://raw.githubusercontent.com/shbatm/MMM-ISY/tree/master/screenshots/floorplan.png)
+![](https://raw.githubusercontent.com/shbatm/MMM-ISY/master/screenshots/floorplan.png)
 
 Individual Device Image File:
 
-![](https://raw.githubusercontent.com/shbatm/MMM-ISY/tree/master/screenshots/22D8601.png) ![](https://raw.githubusercontent.com/shbatm/MMM-ISY/tree/master/screenshots/22D8601_background.png)
+![](https://raw.githubusercontent.com/shbatm/MMM-ISY/master/screenshots/22D8601.png) ![](https://raw.githubusercontent.com/shbatm/MMM-ISY/master/screenshots/22D8601_background.png)
 
 ## Creating the Floorplans
 The floor plan works by overlaying several transparent image 'layers' on top of each other.  There is a base layer that is always shown, and then each ISY device has its own PNG file that shows nothing but the device you want to highlight (everything else on the image is transparent).  When the device is "ON" the module sets the opacity of that layer to the ON level of the device and it shows up on the floorplan.  Think of it like Photoshop layers turning on and off.
