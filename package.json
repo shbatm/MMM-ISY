@@ -10,7 +10,7 @@
     "url": "git+https://bitbucket.org/shbatm/mmm-isy.git"
   },
   "dependencies": {
-    "isy-js": "^0.4.4"
+    "isy-js": "github:shbatm/isy-js"
   },
   "bugs": {
     "url": "https://bitbucket.org/shbatm/mmm-isy/issues"
