@@ -107,7 +107,6 @@ module.exports = NodeHelper.create({
 		}
 		
 		delete device.isy;
-		console.log(device);
 		device.nodeId = localDev.nodeId;
 		this.devices.splice(this.devices.indexOf(localDev), 1, device);
         this.sendSocketNotification("DEVICE_CHANGED", device);
