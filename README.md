@@ -20,7 +20,11 @@ var config = {
 ```
 
 ## Screenshots
-Live view:
+Animated View:
+
+![](https://raw.githubusercontent.com/shbatm/MMM-ISY/master/screenshots/floorplan_animated.gif)
+
+Static View:
 
 ![](https://raw.githubusercontent.com/shbatm/MMM-ISY/master/screenshots/floorplan_preview.png)
 
