@@ -54,9 +54,9 @@ Module.register("MMM-ISY", {
 	getOpacity: function(device) {
 		var opacity = 0;
 		if (this.config.invertedNodes.indexOf(device.address) === -1) {
-			var opacity = (this.config.showDimmingLevels) ? (device.currentState / 255.0) : (device.currentState > 0) ? 1 : 0;
+			opacity = (this.config.showDimmingLevels) ? (device.currentState / 255.0) : (device.currentState > 0) ? 1 : 0;
 		} else {
-			var opacity = (this.config.showDimmingLevels) ? ((255 - device.currentState) / 255.0) : (device.currentState > 0) ? 0 : 1;
+			opacity = (this.config.showDimmingLevels) ? ((255 - device.currentState) / 255.0) : (device.currentState > 0) ? 0 : 1;
 		}
 		return opacity;
 	},
@@ -130,7 +130,7 @@ Module.register("MMM-ISY", {
 		
 		if ("showSetPoints" in tstatConf && tstatConf.showSetPoints) {
 			var isyHeatSetPoint = document.createElement("div");
-			isyHeatSetPoint.className = "isyHeatSetPoint";
+			isyHeatSetPoint.className = "isySetPoint";
 			isyHeatSetPoint.id = "ISYNode_" + device.address + "_HSP";
 			isyHeatSetPoint.innerHTML = device.status.heatSetPoint + "<sup>&deg;F</sup>";
 			isyTstatWrapper.appendChild(isyHeatSetPoint);
@@ -143,13 +143,13 @@ Module.register("MMM-ISY", {
 		} else if (device.status.currentStatus == "cooling") {
 			isyCurrTemp.classList.add("isyCooling");
 		}
-		isyCurrTemp.id = "ISYNode_" + device.node + "_CT";
+		isyCurrTemp.id = "ISYNode_" + device.address + "_CT";
 		isyCurrTemp.innerHTML = device.status.currTemp + "<sup>&deg;F</sup>";
 		isyTstatWrapper.appendChild(isyCurrTemp);
 
 		if ("showSetPoints" in tstatConf && tstatConf.showSetPoints) {
 			var isyCoolSetPoint = document.createElement("div");
-			isyCoolSetPoint.className = "isyCoolSetPoint";
+			isyCoolSetPoint.className = "isySetPoint";
 			isyCoolSetPoint.id = "ISYNode_" + device.address + "_CSP";
 			isyCoolSetPoint.innerHTML = device.status.coolSetPoint + "<sup>&deg;F</sup>";
 			isyTstatWrapper.appendChild(isyCoolSetPoint);	
@@ -190,10 +190,10 @@ Module.register("MMM-ISY", {
 
 	// socketNotificationReceived from helper
 	socketNotificationReceived: function (notification, payload) {
-		if (notification === 'DEVICE_LIST_RECEIVED') {
+		if (notification === 'DEVICE_LIST_RECEIVED' && !this.loaded) {
 			this.deviceList = {};
 			this.deviceList = payload;
-			console.log(this.deviceList);
+			// console.log(this.deviceList);
 			this.loaded = true;
 			this.updateDom();
 		}
@@ -208,7 +208,7 @@ Module.register("MMM-ISY", {
 		if (notification === 'THERMOSTAT_CHANGED') {
 			var tstat = document.getElementById("ISYNode_" + payload.address + "_TSTAT");
 			var prt = tstat.parentNode;
-			prt.removeChild(tstat)
+			prt.removeChild(tstat);
 			prt.appendChild(this.generateThermostat(payload));
 		}
 		if (notification === 'VARIABLE_CHANGED') {

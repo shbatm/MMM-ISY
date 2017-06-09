@@ -136,9 +136,16 @@ module.exports = NodeHelper.create({
      */
     socketNotificationReceived: function(notification, payload) {
         if (notification === "INITIALIZE_ISY") {
-            console.log("Initializing ISY Connection...");
-            this.config = payload;
-            this.isyInitialize();
+            if (this.config === null) {
+            	// Initial Load of this helper.
+	            console.log("Initializing ISY Connection...");
+	            this.config = payload;
+	            this.isyInitialize();
+            } else if (this.devices.length > 0) {
+            	// ISY is already initialized, just send back the data:
+            	this.sendSocketNotification("DEVICE_LIST_RECEIVED", { dev: this.devices, var: this.variables, tst: this.tstats });
+            }
+            // else be patient, already waiting for a callback.
         } else if (notification === "REFRESH_DEVICE_LIST") {
             this.handleInitialized();
         } else {
