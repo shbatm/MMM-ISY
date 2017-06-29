@@ -113,7 +113,7 @@ module.exports = NodeHelper.create({
     },
 
     handleVariableChanged: function(isy, variable) {
-        var logMessage = "From isy: "+isy.address+' variable changed: '+variable;
+        var logMessage = `From isy: ${isy.address} variable changed: ${variable.type}.${variable.id}`;
 		console.log(logMessage);
 
         // Check if the device is in our list
