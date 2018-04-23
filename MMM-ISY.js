@@ -133,7 +133,7 @@ Module.register("MMM-ISY", {
 
         if (typeof dev.isyConfig === 'object') {
             // This device has special configuration options
-            if ("onVal" in dev.isyConfig && payload.currentState === dev.isyConfig.onVal) {
+            if ("onVal" in dev.isyConfig && payload.currentState == dev.isyConfig.onVal) {
                 if ("flash" in dev.isyConfig && dev.isyConfig.flash) {
                     $dev.addClass("isyFlashNode");
                 }
@@ -142,7 +142,7 @@ Module.register("MMM-ISY", {
                     this.sendNotification(dev.isyConfig.notifyOn.notification, dev.isyConfig.notifyOn.payload);
                 }
                 return;
-            } else if ("offVal" in dev.isyConfig && payload.currentState === dev.isyConfig.offVal) {
+            } else if ("offVal" in dev.isyConfig && payload.currentState == dev.isyConfig.offVal) {
                 if ("flash" in dev.isyConfig && dev.isyConfig.flash) {
                     $dev.removeClass("isyFlashNode");
                 }

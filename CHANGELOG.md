@@ -1,3 +1,13 @@
+## [1.0.5] - Advanced Node Server Functions
+
+Changed:
+
+* Updated to use v0.6.0+ of isy-js package to take advantage of advanced node server node functions
+
+Added: 
+
+* Ability to trigger states based on other properties instead of just Current State (ST). For example, the Harmony Hub node server always shows ST=1 (True) when the node server is connected, but changes GV3 to the current activity. GV3=0 means the system is off, so we want to use GV3 for the status instead of ST. In the config, add the node and 'useProp: "GV3"' to use a different property for the current state.
+
 ## [1.0.4] - Transition to SVG and jQuery
 
 Added:

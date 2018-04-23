@@ -97,11 +97,11 @@ module.exports = NodeHelper.create({
     },
 
     handleDeviceChanged: function(isy, dev) {
-        var logMessage = 'From isy: ' + isy.address + ' device changed: ' + dev.name;
-        if (isyConfig.enableDebugLogging)
+        if (isyConfig.enableDebugLogging) {
+            var logMessage = 'From isy: ' + isy.address + ' device changed: ' + dev.name;
             logMessage += this.detailedDeviceLogMessage(dev);
-        console.log(logMessage);
-
+            console.log(logMessage);
+        }
         if (dev.address.startsWith("n0"))
             dev.svgId = dev.address;
         else
@@ -116,6 +116,12 @@ module.exports = NodeHelper.create({
                 this.sendSocketNotification("THERMOSTAT_CHANGED", dev);
                 return;
             } else { return; }
+        }
+
+        // Check if config has an alternate property selected to use as currentState (e.g. HarmonyHub node server uses GV3 instead of ST)
+        if (dev.svgId in this.config.nodes && "useProp" in this.config.nodes[dev.svgId] && this.config.nodes[dev.svgId].useProp in dev) {
+            console.log("Using " + this.config.nodes[dev.svgId].useProp + "=" + dev[this.config.nodes[dev.svgId].useProp] + " (" + typeof dev[this.config.nodes[dev.svgId].useProp] + ") as status for " + dev.name);
+            dev.currentState = dev[this.config.nodes[dev.svgId].useProp];
         }
 
         delete dev.isy;

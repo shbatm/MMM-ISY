@@ -133,6 +133,7 @@ nodes: {
 | `inverted: true` | Invert the normal ON and OFF states (e.g. Garage Door sensor). Cannot be used with `flash` use `onVal: 0, offVal: 1` if you want to flash an inverted node.
 | `flash: true` | *Optional* Setting this to `true` will show the device pulsing on and off. The actual animation can be changed by overriding the `isyFlashNode` class in the `MMM-ISY.css` file.
 | `notifyOn` & `notifyOff` | *Optional* To send a module notification when a variable changes, add one or both of these.<br>Format: `{ notification: "NOTIFICATION_TEXT", payload: "payload to send" }`
+| `useProp` | *Optional* Add to use a property other than `ST` for the devices' Current State (e.g. `GV3`). See CHANGELOG v1.0.5 for details.
 
 ## Sample Configuration
 ```js
@@ -159,7 +160,8 @@ nodes: {
                     }
                 }
             },
-            "i_2277CB1": { inverted: true }
+            "i_2277CB1": { inverted: true },
+            "n007_h1509751175b7e": { useProp: "GV3", offVal: 0 }
         },
         variables: { 
             "var_2_48": { onVal: 1, offVal: 0 }

@@ -1,6 +1,6 @@
 {
   "name": "MMM-ISY",
-  "version": "1.0.3",
+  "version": "1.0.5",
   "description": "Displays ISY devicie updates on floor plan",
   "main": "MMM-ISY.js",
   "author": "shbatm",
@@ -15,16 +15,5 @@
   "bugs": {
     "url": "https://bitbucket.org/shbatm/mmm-isy/issues"
   },
-  "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme",
-  "devDependencies": {
-    "stylelint": "latest",
-    "grunt": "latest",
-    "grunt-eslint": "latest",
-    "grunt-jsonlint": "latest",
-    "grunt-markdownlint": "^1.0.13",
-    "grunt-stylelint": "latest",
-    "grunt-yamllint": "latest",
-    "stylelint-config-standard": "latest",
-    "time-grunt": "latest"
-  }
+  "homepage": "https://github.com/shbatm/MMM-KeyBindings#readme"
 }
