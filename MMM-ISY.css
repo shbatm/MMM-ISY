@@ -2,101 +2,97 @@
  * Custom CSS File for MMM-ISY Module
  */
 
- .isyOuterWrapper {
+.isyOuterWrapper {
     position: relative;
     vertical-align: middle;
     text-align: center;
     left: 50%;
     -webkit-transform: translateX(-50%);
     transform: translateX(-50%);
- }
+}
 
- .isyInnerWrapper {
+.isyInnerWrapper {
     position: relative;
     vertical-align: middle;
     text-align: center;
     display: inline-block;
     width: 100%;
     padding-bottom: 45%;
- }
+}
+
 
 /* Class for the _F_loor _P_lan layer*/
- .isyFP {
+
+.isyFP {
     position: absolute;
     width: 100%;
     left: 50%;
     top: 50%;
     -webkit-transform: translate(-50%, -50%);
     transform: translate(-50%, -50%);
- }
+}
 
-/* Class for the _O_verlay _N_ode */
- .isyON {  
-    opacity: 0;
- }
-
- .isyFlashNode {
-    -webkit-animation: fadeinout 4s linear  forwards infinite;
-    animation: fadeinout 4s linear forwards infinite;
- }
+.isyFlashNode {
+    -webkit-animation: fadeinout 4s linear alternate infinite;
+    animation: fadeinout 4s linear alternate infinite;
+}
 
 
- /* Classes for displaying thermostat information
-  * 
-  * NOTE: To change size of display, recommend changing the zoom setting of isyTstatWrapper;
-  */
- .isyCurrTemp {
-  border-radius: 50%;
-  width: 2.55vw;
-  height: 2.55vw;
-  line-height: 2.55vw;
-  border: 0.34vw solid white;
-  float: left;
-  text-align: center;
+/* Rotate the fans when on. Origin must be set for each individual fan in svg */
+
+/*.fan.isyON {
+    -webkit-animation: rotating 6s steps(6, end) infinite;
+    -moz-animation: rotating 6s steps(6, end) infinite;
+    -ms-animation: rotating 6s steps(6, end) infinite;
+    -o-animation: rotating 6s steps(6, end) infinite;
+    animation: rotating 6s steps(6, end) infinite;
+    transform: rotateZ(360deg); 
+}*/
+
+@-webkit-keyframes rotating {
+    from {
+        -webkit-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
 }
-.isyHeating {
-  border-color: red;
-}
-.isyCooling {
-  border-color: blue;
-}
-.isySetPoint {
-  float: left;
-  width: 3.23vw;
-  height: 3.23vw;
-  line-height: 3.23vw;
-  text-align: center;
-}
-.isyHumidity {
-  text-align: center;
-  font-size: 1vw;
-  padding: 0.15vw 0px 0.15vw 0px;
-  margin-top: 0.15vw 0px 0.15vw 0px;
-}
-.isyTstatWrapper sup {
-    font-size: 0.75vw;
-}
-.isyTstatWrapper {
-  vertical-align: middle;
-  background: rgba(0,0,0,0.6);
-  color: #fff;
-  margin: auto;
-  padding: 5px;
-  font-size: 1.36vw;
-  font-family: "Roboto Condensed", sans-serif;
-  font-weight: 700;
-  line-height: 0;
-  display: inline-block;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  zoom: 1;
+
+@keyframes rotating {
+    from {
+        -ms-transform: rotate(0deg);
+        -moz-transform: rotate(0deg);
+        -webkit-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+    to {
+        -ms-transform: rotate(360deg);
+        -moz-transform: rotate(360deg);
+        -webkit-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
 }
 
 @-webkit-keyframes fadeinout {
-    50% { opacity: 1; }
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
 }
 
 @keyframes fadeinout {
-    50% { opacity: 1; }
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
 }

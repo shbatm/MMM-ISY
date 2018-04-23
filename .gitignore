@@ -3,3 +3,4 @@ node_modules/*
 isy.json
 *.prod
 *.bak
+floorplan.svg

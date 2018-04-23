@@ -1,6 +1,6 @@
 {
   "name": "MMM-ISY",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Displays ISY devicie updates on floor plan",
   "main": "MMM-ISY.js",
   "author": "shbatm",
