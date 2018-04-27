@@ -1,6 +1,6 @@
 {
   "name": "MMM-ISY",
-  "version": "1.0.5",
+  "version": "1.0.7",
   "description": "Displays ISY devicie updates on floor plan",
   "main": "MMM-ISY.js",
   "author": "shbatm",
@@ -10,7 +10,8 @@
     "url": "git+https://bitbucket.org/shbatm/mmm-isy.git"
   },
   "dependencies": {
-    "isy-js": "github:shbatm/isy-js"
+    "isy-js": "github:shbatm/isy-js",
+    "mdi": "^2.2.43"
   },
   "bugs": {
     "url": "https://bitbucket.org/shbatm/mmm-isy/issues"

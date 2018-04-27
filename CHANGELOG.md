@@ -1,3 +1,21 @@
+## [1.0.7] - Initial Controls Implementation
+
+Added:
+
+* Initial implementation of a control system using Bootstrap 4 to display tooltip style popups when devices are clicked.
+* Current Devices with working controls:
+    * Dimmable Insteon Lights
+    * On/Off Insteon Lights
+    * On/Off Insteon Outlets
+    * Insteon FanLink
+    * Hue Bulbs via Hue Polyglot Node Server (if reported with nodeDefId as ECOLOR_LIGHT or COLOR_LIGHT)
+
+## [1.0.6] - Added Custom Status Text Option
+
+Added:
+
+* In the module config you can provide a `customStatusText` object for a node and the module will update an appropriately tagged text span in the SVG with the status whenever that device changes.
+
 ## [1.0.5] - Advanced Node Server Functions
 
 Changed:

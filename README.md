@@ -92,6 +92,8 @@ Note: for security reasons, the ISY settings are not stored in the MagicMirror's
 
 | Option           | Description
 |----------------- |-----------
+| `maxWidth` | *Optional* Maximum width of the module. *Default:* `98%`
+| `enableControls` | *Optional* Choose to enable the control subsystem, allowing you to control the devices by clicking on the individual devices in the graphic. *Default:* `false`.
 | `nodes`        | *Optional* Array of ISY Nodes customizations. By default, you do not need to provide a list of nodes in the config. As long as the elements in your `floorplan.svg` are tagged properly, they will automatically be updated. This setting is used to provide advanced node properties. See Advanced Properties below.
 | `variables`        | *Optional* Array of ISY Variable customizations, similar to `nodes` above.
 | `floorplan` | *Optional* to set a custom file name for the base floorplan.<br/>*Default:* `floorplan.svg`
@@ -99,7 +101,6 @@ Note: for security reasons, the ISY settings are not stored in the MagicMirror's
 | `.position` | The CSS Style to be applied describing the position and size of the T-Stat.
 | `.showRelHum` | Whether or not to show the relative humidity reported by the device.
 | `.showSetPoints` | Whether or not to show the Heating and Cooling Setpoints. If `false` only the current temperature is shown.
-| `showDimmingLevels` | *Optional* `boolean` - whether or not to show devices' dimming levels or just show them as ON/OFF.  If set to true, the dim level reported by the ISY will be used as the Opacity of the device's layer.
 
 ### Advanced Properties
 
@@ -134,6 +135,8 @@ nodes: {
 | `flash: true` | *Optional* Setting this to `true` will show the device pulsing on and off. The actual animation can be changed by overriding the `isyFlashNode` class in the `MMM-ISY.css` file.
 | `notifyOn` & `notifyOff` | *Optional* To send a module notification when a variable changes, add one or both of these.<br>Format: `{ notification: "NOTIFICATION_TEXT", payload: "payload to send" }`
 | `useProp` | *Optional* Add to use a property other than `ST` for the devices' Current State (e.g. `GV3`). See CHANGELOG v1.0.5 for details.
+| `customStatusText` | *Optional* If you have a text span in the SVG file for a device, named `(node address)_tspan` and provide and provide an object with text to use for each status, the text will be updated. See text under the TV icon in the screenshot above for demo.
+| `showStatusText` | **FUTURE** *Optional* If you have a text span in the SVG file for a device, named `(node address)_tspan` and `showStatusText: true` in your config for that node, the text will be updated with the formatted status (e.g. dimming level in %).
 
 ## Sample Configuration
 ```js

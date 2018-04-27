@@ -120,7 +120,7 @@ module.exports = NodeHelper.create({
 
         // Check if config has an alternate property selected to use as currentState (e.g. HarmonyHub node server uses GV3 instead of ST)
         if (dev.svgId in this.config.nodes && "useProp" in this.config.nodes[dev.svgId] && this.config.nodes[dev.svgId].useProp in dev) {
-            console.log("Using " + this.config.nodes[dev.svgId].useProp + "=" + dev[this.config.nodes[dev.svgId].useProp] + " (" + typeof dev[this.config.nodes[dev.svgId].useProp] + ") as status for " + dev.name);
+            // console.log("Using " + this.config.nodes[dev.svgId].useProp + "=" + dev[this.config.nodes[dev.svgId].useProp] + " (" + typeof dev[this.config.nodes[dev.svgId].useProp] + ") as status for " + dev.name);
             dev.currentState = dev[this.config.nodes[dev.svgId].useProp];
         }
 
@@ -142,6 +142,51 @@ module.exports = NodeHelper.create({
 
     handleProgramCmdResponse: function(success) {
         this.sendSocketNotification("PROGRAM_CMD_RESULT", success);
+    },
+
+    handleCommandResponse: function(response) {
+        // console.log(response);
+        this.sendSocketNotification("SEND_CMD_RESULT", response);
+    },
+
+    sendDeviceCommand: function(payload) {
+        var that = this;
+        var dev = undefined;
+
+        switch (payload.kind) {
+            case "dev":
+                dev = this.devices[payload.id];
+                break;
+            case "tstat":
+                dev = this.tstats[payload.id];
+                break;
+            default:
+                return;
+        }
+
+        if (typeof dev === "undefined") {
+            this.handleCommandResponse("SEND_CMD_RESULT", "ERROR: Device Not Found in List");
+            return;
+        }
+
+        // console.log(JSON.stringify(dev, undefined, 3));
+        responseCB = this.handleCommandResponse.bind(that);
+        dev.isy = this.isy; // Re-attach the reference to the ISY that was deleted.
+
+        if (["light", "dimmableLight", "ecolorLight", "colorLight"].indexOf(dev.deviceType) > -1) {
+            if (["DON", "DOF", "DFON", "DFOF", 0, 100].indexOf(payload.cmd) > -1 ||
+                (dev.deviceType === "light" && typeof payload.cmd === "number" && payload.cmd > 0)) {
+                dev.sendLightCommand(payload.cmd, responseCB);
+            } else if (typeof payload.cmd === "number" && (payload.cmd > 0 && payload.cmd < 100)) {
+                dev.sendLightDimCommand(payload.cmd, responseCB);
+            }
+        } else if (dev.deviceType === "fan") {
+            dev.sendFanCommand(payload.cmd, responseCB);
+        } else if (dev.deviceType === "outlet") {
+            dev.sendOutletCommand(payload.cmd, responseCB);
+        }
+
+        delete dev.isy; // remove ISY reference again
     },
 
     // Override socketNotificationReceived method.
@@ -168,6 +213,8 @@ module.exports = NodeHelper.create({
             this.handleInitialized();
         } else if (notification === "PROGRAM_CMD") {
             this.isy.runProgram(payload.id, payload.command, this.handleProgramCmdResponse.bind(that));
+        } else if (notification === "DEVICE_CMD") {
+            this.sendDeviceCommand(payload);
         } else {
             console.log(this.name + " socket notification recevied: " + notification);
         }
@@ -177,49 +224,49 @@ module.exports = NodeHelper.create({
     detailedDeviceLogMessage: function(device) {
         var logMessage = '';
         switch (device.deviceType) {
-            case this.isy.DEVICE_TYPE_FAN:
+            case "fan":
                 logMessage += ' fan state: ' + device.getCurrentFanState();
                 break;
-            case this.isy.DEVICE_TYPE_LIGHT:
+            case "light":
                 logMessage += ' light state: ' + device.getCurrentLightState();
                 break;
-            case this.isy.DEVICE_TYPE_DIMMABLE_LIGHT:
+            case "dimmableLight":
                 logMessage += ' dimmable light state: ' + device.getCurrentLightState() + ' dimm Level: ' + device.getCurrentLightDimState();
                 break;
-            case this.isy.DEVICE_TYPE_LOCK:
+            case "lock":
                 logMessage += ' lock state: ' + device.getCurrentLockState();
                 break;
-            case this.isy.DEVICE_TYPE_SECURE_LOCK:
+            case "secureLock":
                 logMessage += ' lock state: ' + device.getCurrentLockState();
                 break;
-            case this.isy.DEVICE_TYPE_OUTLET:
+            case "outlet":
                 logMessage += ' outlet state: ' + device.getCurrentOutletState();
                 break;
-            case this.isy.DEVICE_TYPE_ALARM_DOOR_WINDOW_SENSOR:
+            case "alarmDoorWindowSensor":
                 logMessage += ' door window sensor state: ' + device.getCurrentDoorWindowState() + ' logical: ' + device.getLogicalState() + ' physical: ' + device.getPhysicalState();
                 break;
-            case this.isy.DEVICE_TYPE_DOOR_WINDOW_SENSOR:
+            case "doorWindowSensor":
                 logMessage += ' door window sensor state: ' + device.getCurrentDoorWindowState();
                 break;
-            case this.isy.DEVICE_TYPE_ALARM_PANEL:
+            case "alarmPanel":
                 logMessage += ' alarm panel state: ' + device.getAlarmStatusAsText();
                 break;
-            case this.isy.DEVICE_TYPE_MOTION_SENSOR:
+            case "motionSensor":
                 logMessage += ' motion sensor state: ' + device.getCurrentMotionSensorState();
                 break;
-            case this.isy.DEVICE_TYPE_SCENE:
+            case "scene":
                 logMessage += ' scene. light state: ' + device.getCurrentLightState() + ' dimm Level: ' + device.getCurrentLightDimState();
                 break;
-            case this.isy.DEVICE_TYPE_THERMOSTAT:
+            case "thermostat":
                 logMessage += ' thermostat. ' + device.getFormattedStatus();
                 break;
-            case this.isy.DEVICE_TYPE_NODE_SERVER_NODE:
+            case "nodeServerNode":
                 logMessage += ' node server node.\n' + device.getFormattedStatus();
                 break;
-            case this.isy.DEVICE_TYPE_REMOTE:
+            case "remote":
                 logMessage += ' mini remote. Nothing to report.';
                 break;
-            case this.isy.DEVICE_TYPE_LEAK_SENSOR:
+            case "leakSensor":
                 logMessage += ' leak sensor. ';
                 break;
             default:

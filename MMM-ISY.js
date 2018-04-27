@@ -10,14 +10,12 @@
 
 Module.register("MMM-ISY", {
     defaults: {
-        updateInterval: 60000,
-        retryDelay: 5000,
-        maxWidth: '90%',
+        maxWidth: '98%',
         floorplan: 'floorplan.svg',
         nodes: {},
         variables: {}, // Format: "var_type_varID": { onVal: 1, offVal: 0, flash: true },
         thermostats: {},
-        showDimmingLevels: false,
+        enableControls: false
     },
 
     deviceListCount: 0,
@@ -39,7 +37,7 @@ Module.register("MMM-ISY", {
 
         var $outerWrapper = $("<div>", {
             id: "isyOuterWrapper",
-            "class": "isyOuterWrapper",
+            "class": "isyOuterWrapper bootstrap",
             style: "width:" + this.config.maxWidth + ";"
         }).append($("<div>", {
             id: "isyInnerWrapper",
@@ -47,7 +45,8 @@ Module.register("MMM-ISY", {
         }));
 
         if (!this.loaded && !this.connected) {
-            $outerWrapper.find("#isyInnerWrapper").append("<span>Loading ISY Floorplan ...</span>");
+            $outerWrapper.find("#isyInnerWrapper").append("<span id='loadingText'>Loading ISY Floorplan ...</span>").append(this.controlTemplates.loading);
+
             // Get the floorplan graphic
             console.log("Getting floorplan graphic: " + this.config.floorplan);
             $outerWrapper.find("#isyInnerWrapper").svg({
@@ -56,7 +55,7 @@ Module.register("MMM-ISY", {
                 onLoad: function(svg) {
                     // Remove Loading Classes and Text
                     $(this).removeClass("dimmed light small");
-                    $(this).find("span").remove();
+                    $(this).find("#loadingText").remove();
                     // Store the SVG reference for later
                     self.svg = $(this).svg('get');
 
@@ -90,7 +89,7 @@ Module.register("MMM-ISY", {
             // Handle Insteon Thermostats
             if ($(this)[0].id in self.deviceList.tst) {
                 // console.log("Thermostat " + $(this)[0].id + " found.");
-                self.updateThermostat(self.deviceList.tst[$(this)[0].id]);
+                self.updateThermostat(self.deviceList.tst[$(this)[0].id], true, $(this));
             }
             // Handle Variables
             if ($(this)[0].id in self.deviceList.var) {
@@ -100,8 +99,18 @@ Module.register("MMM-ISY", {
         });
     },
 
-    updateThermostat: function(tstat) {
-        console.log(tstat);
+    updateThermostat: function(tstat, initial = false, $dev = undefined) {
+        var that = this;
+        if (!initial) {
+            $dev = $(`#${tstat.svgId}`, this.svg.root());
+            if ($dev.length === 0) { return; }
+        }
+        var dev = $dev[0];
+
+        // Tag the device with the ISY information for use later
+        dev.isyNode = tstat;
+        dev.isyKind = "tstat";
+
         $(`#${tstat.svgId}_CT`, this.svg.root()).text(tstat.fstatus.currTemp);
         if (this.config.thermostats[tstat.svgId.replace(/[0-9]$/, "")].showSetPoints) {
             $(`#${tstat.svgId}_CSP`, this.svg.root()).text(tstat.fstatus.coolSetPoint);
@@ -110,17 +119,16 @@ Module.register("MMM-ISY", {
         } else {
             $(`#${tstat.svgId}_setpoints`, this.svg.root()).hide();
         }
-        $(`#${tstat.svgId}_ST`, this.svg.root()).removeClass("cooling heating off").addClass(tstat.fstatus.currentStatus);
+        $(`#${tstat.svgId}_ST`, this.svg.root()).removeClass("Cooling Heating Idle").addClass(tstat.fstatus.currentStatus);
     },
 
     updateDevice: function(payload, kind, initial = false, $dev = undefined) {
+        var that = this;
         if (!initial) {
             $dev = $(`#${payload.svgId}`, this.svg.root());
             if ($dev.length === 0) { return; }
         }
-
         var dev = $dev[0];
-        var list;
 
         if (kind === "dev") {
             // console.log("MMM-ISY Tracked Device Changed: " + payload.svgId);
@@ -131,8 +139,70 @@ Module.register("MMM-ISY", {
             return;
         }
 
+        var toCamelCase = (str) => (/[-_\s]/.test(str)) ? (str.toLowerCase().replace(/[\b_-](\w)/g, (m, p1, i) => p1.toUpperCase())) : str;
+
+        // Tag the device with the ISY information for use later
+        dev.isyNode = payload;
+        dev.isyKind = kind;
+
+        if (initial && this.config.enableControls) {
+            // $dev.click(this.deviceClicked);
+            var ctrlTemplate;
+            if ("deviceType" in dev.isyNode) {
+                if (dev.isyNode.deviceType === "nodeServerNode" && toCamelCase(dev.isyNode.nodeDefId) in this.controlTemplates) {
+                    ctrlTemplate = this.controlTemplates[toCamelCase(dev.isyNode.nodeDefId)];
+                } else if (toCamelCase(dev.isyNode.deviceType) in this.controlTemplates) {
+                    ctrlTemplate = this.controlTemplates[toCamelCase(dev.isyNode.deviceType)];
+                }
+            }
+
+            if (typeof ctrlTemplate !== "undefined") {
+                $dev.popover({
+                    html: true,
+                    title: function() {
+                        var template = `<span id="popover-title" class="white-text">${dev.isyNode.name}</span>
+                            <button type="button" class="close" id="btnClose" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="white-text">&times;</span></button>`;
+                        return template;
+                    },
+                    content: ctrlTemplate,
+                    container: "#isyInnerWrapper",
+                    placement: "auto"
+                }).on('inserted.bs.popover', function(evt) {
+                    var $popup = $('#' + $(evt.target).attr('aria-describedby'));
+                    // var $popup = $(this).next('.popover');
+                    $popup.find('button').click(function(e) {
+                        $popup.popover('hide');
+                        if (this.id !== "btnClose") { that.handleControlEvent(evt.target, this.id) };
+                    });
+                    $popup.find('#brightness').ionRangeSlider({
+                        min: 0,
+                        max: 100,
+                        from: Math.round(dev.isyNode.currentState / 255.0 * 100),
+                        hide_min_max: true,
+                        postfix: "%",
+                        scope: evt,
+                        onFinish: function(data) {
+                            that.handleControlEventWithDebounce(this.target, data.from, 500);
+                        }
+                    });
+                });
+            }
+        }
+
         if (typeof dev.isyConfig === 'object') {
             // This device has special configuration options
+            if ("customStatusText" in dev.isyConfig && payload.currentState in dev.isyConfig.customStatusText) {
+                $dev_text = $(`#${payload.svgId}_tspan`, this.svg.root());
+                if ($dev_text.length !== 0) {
+                    $dev_text.text(dev.isyConfig.customStatusText[payload.currentState]);
+                    if (("offVal" in dev.isyConfig && payload.currentState == dev.isyConfig.offVal) || payload.currentState === 0) {
+                        $dev_text.removeClass("isyON").addClass("isyOFF");
+                    } else if (("onVal" in dev.isyConfig && payload.currentState == dev.isyConfig.onVal) || payload.currentState > 0) {
+                        $dev_text.removeClass("isyOFF").addClass("isyON");
+                    }
+                }
+            }
+
             if ("onVal" in dev.isyConfig && payload.currentState == dev.isyConfig.onVal) {
                 if ("flash" in dev.isyConfig && dev.isyConfig.flash) {
                     $dev.addClass("isyFlashNode");
@@ -168,22 +238,62 @@ Module.register("MMM-ISY", {
                 $dev.removeClass("isyON").addClass("isyOFF");
             }
         }
+
         return;
     },
 
     getScripts: function() {
-        return ['jquery.min.js', 'jquery.svg.min.js', 'jquery.svganim.min.js', 'jquery.svgdom.min.js'];
+        return [this.file('js/jquery-3.2.1.min.js'),
+            this.file('js/jquery.svg.min.js'),
+            this.file('js/jquery.svganim.min.js'),
+            this.file('js/jquery.svgdom.min.js'),
+            this.file('js/popper.min.js'),
+            this.file('js/bootstrap.min.js')
+        ];
     },
 
     getStyles: function() {
-        return [this.name + ".css", 'jquery.svg.css'];
+        return [this.name + ".css", 'font-awesome.css',
+            this.file('css/bootstrap-div.min.css'),
+            this.file('css/bootstrap-div-tweaks.css')
+        ];
     },
+
+    getControlSubsystem: function() {
+        return [
+            this.file('js/ion.rangeSlider.min.js'),
+            this.file('css/ion.rangeSlider.css'),
+            this.file('css/ion.rangeSlider.skinHTML5.css'),
+            this.file('node_modules/mdi/css/materialdesignicons.min.css')
+        ];
+    },
+
+    handleControlEvent: function(device, command) {
+        command = (typeof command === "string") ? command.replace(/btn/g, '') : command;
+        var payload = { id: device.id, node: device.isyNode, kind: device.isyKind, config: device.isyConfig, cmd: command };
+        if (device.isyKind === "dev" || device.isyKind === "tstat") {
+            this.sendSocketNotification("DEVICE_CMD", payload);
+        } else if (device.isyKind === "var") {
+            this.sendSocketNotification("VARIABLE_CMD", payload);
+        }
+    },
+
+    handleControlEventWithDebounce(device, command, wait) {
+        clearTimeout(this.debounceTimeout);
+        this.debounceTimeout = setTimeout(() => {
+            this.debounceTimeout = null;
+            this.handleControlEvent(device, command);
+        }, wait);
+    },
+
+    debounceTimeout: null,
 
     // socketNotificationReceived from helper
     socketNotificationReceived: function(notification, payload) {
         var self = this;
-        console.log("MMM-ISY received notification: " + notification);
+        // console.log("MMM-ISY received notification: " + notification);
         if (notification === 'DEVICE_LIST_RECEIVED') {
+            $('#isyLoadingModal').modal('hide');
             this.deviceList = {};
             this.deviceList = payload;
             this.connected = true;
@@ -221,12 +331,115 @@ Module.register("MMM-ISY", {
 
         }
         if (notification === 'DOM_OBJECTS_CREATED') {
-            this.sendSocketNotification("INITIALIZE_ISY", this.config);
+            // Show Loading Modal
+            $('#isyLoadingModal').modal({ backdrop: 'static' }).on("hidden.bs.modal", function(e) {
+                $('#isyInnerWrapper').removeClass("modal-open");
+            });
+            $('#isyInnerWrapper').addClass("modal-open");
+            $('.modal-backdrop').appendTo('#isyInnerWrapper');
+            $('body').removeClass('modal-open');
+
+            if (this.config.enableControls) {
+                this.loadDependencies("getControlSubsystem", () => {
+                    console.log("MMM-ISY Control Subsystem Loaded.");
+                    this.sendSocketNotification("INITIALIZE_ISY", this.config);
+                });
+            } else {
+                this.sendSocketNotification("INITIALIZE_ISY", this.config);
+            }
         }
         if (notification === 'ISY_PROGRAM_CMD') {
             this.sendSocketNotification("PROGRAM_CMD", payload);
             // Payload structure: { id: 'pgmID', command: 'cmd'}
             // Possible values for cmd: run|runThen|runElse|stop|enable|disable|enableRunAtStartup|disableRunAtStartup
         }
+    },
+
+    deviceClicked: function(evt) {
+        console.log(evt);
+    },
+
+    controlTemplates: {
+        loading: `<div class="modal fade" id="isyLoadingModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-body text-center text-white">
+                            <h4>CONNECTING TO ISY...</h4>
+                            <span class="fa fa-connectdevelop fa-spin fa-3x" style="padding: 1rem;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>`,
+        dimmableLight: `<div class="row row-eq-height text-center" data-deviceType="dimmableLight">
+                <div class="col-3">
+                    <button type="button" id="btnDOF" class="btn btn-grey darken-2 btn-sm-i" data-dismiss="popover"><i class="mdi mdi-brightness-5 mdi-light mdi-16px" aria-hidden="true"></i></button>
+                </div>
+                <div class="col-6">
+                    <input id="brightness" />
+                </div>
+                <div class="col-3">
+                    <button type="button" id="btnDON" class="btn btn-grey darken-2 btn-sm-i" data-dismiss="popover"><i class="mdi mdi-brightness-7 mdi-light mdi-16px" aria-hidden="true"></i></button>
+                </div>
+            </div>
+            <div class="row align-middle text-center">
+                <div class="col-6">
+                    <button id="btnDFOF" type="button" class="btn btn-grey darken-2 btn-sm" data-dismiss="popover"><i class="fa fa-angle-double-down"></i></button>
+                </div>
+                <div class="col-6">
+                    <button id="btnDFON" type="button" class="btn btn-grey darken-2 btn-sm" data-dismiss="popover"><i class="fa fa-angle-double-up"></i></button>
+                </div>
+            </div>`,
+        ecolorLight: `<div class="row row-eq-height text-center" data-deviceType="dimmableLight">
+                <div class="col-3">
+                    <button type="button" id="btnDOF" class="btn btn-grey darken-2 btn-sm-i" data-dismiss="popover"><i class="mdi mdi-brightness-5 mdi-light mdi-16px" aria-hidden="true"></i></button>
+                </div>
+                <div class="col-6">
+                    <input id="brightness" />
+                </div>
+                <div class="col-3">
+                    <button type="button" id="btnDON" class="btn btn-grey darken-2 btn-sm-i" data-dismiss="popover"><i class="mdi mdi-brightness-7 mdi-light mdi-16px" aria-hidden="true"></i></button>
+                </div>
+            </div>
+            <div class="row align-middle text-center">
+                <div class="col-6">
+                    <button id="btnDFOF" type="button" class="btn btn-grey darken-2 btn-sm" data-dismiss="popover"><i class="fa fa-angle-double-down"></i></button>
+                </div>
+                <div class="col-6">
+                    <button id="btnDFON" type="button" class="btn btn-grey darken-2 btn-sm" data-dismiss="popover"><i class="fa fa-angle-double-up"></i></button>
+                </div>
+            </div>`,
+        colorLight: `<div class="row row-eq-height text-center" data-deviceType="dimmableLight">
+                <div class="col-3">
+                    <button type="button" id="btnDOF" class="btn btn-grey darken-2 btn-sm-i" data-dismiss="popover"><i class="mdi mdi-brightness-5 mdi-light mdi-16px" aria-hidden="true"></i></button>
+                </div>
+                <div class="col-6">
+                    <input id="brightness" />
+                </div>
+                <div class="col-3">
+                    <button type="button" id="btnDON" class="btn btn-grey darken-2 btn-sm-i" data-dismiss="popover"><i class="mdi mdi-brightness-7 mdi-light mdi-16px" aria-hidden="true"></i></button>
+                </div>
+            </div>
+            <div class="row align-middle text-center">
+                <div class="col-6">
+                    <button id="btnDFOF" type="button" class="btn btn-grey darken-2 btn-sm" data-dismiss="popover"><i class="fa fa-angle-double-down"></i></button>
+                </div>
+                <div class="col-6">
+                    <button id="btnDFON" type="button" class="btn btn-grey darken-2 btn-sm" data-dismiss="popover"><i class="fa fa-angle-double-up"></i></button>
+                </div>
+            </div>`,
+        light: `<div class="btn-toolbar" style="justify-content: center;" role="toolbar" data-deviceType="light">
+                        <button type="button" id="btnDOF" class="btn btn-grey darken-2" data-dismiss="popover"><i class="mdi mdi-brightness-5 mdi-light" aria-hidden="true"></i></button>
+                        <button type="button" id="btnDON" class="btn btn-grey darken-2" data-dismiss="popover"><i class="mdi mdi-brightness-7 mdi-light" aria-hidden="true"></i></button>
+            </div>`,
+        outlet: `<div class="btn-toolbar" style="justify-content: center;" role="toolbar" data-deviceType="light">
+                        <button type="button" id="btnDOF" class="btn btn-grey darken-2" data-dismiss="popover"><i class="mdi mdi-power-plug-off mdi-light" aria-hidden="true"></i></button>
+                        <button type="button" id="btnDON" class="btn btn-grey darken-2" data-dismiss="popover"><i class="mdi mdi-power-plug mdi-light" aria-hidden="true"></i></button>
+            </div>`,
+        fan: `<div class="btn-toolbar" style="justify-content: center;"  role="toolbar" data-deviceType="fan">
+                    <button type="button" id="btnOff" class="btn btn-grey darken-2 btn-sm-i"><i class="mdi mdi-fan-off"></i></button>
+                    <button type="button" id="btnLow" class="btn btn-grey darken-2 btn-sm-i"><i class="mdi mdi-signal-cellular-1"></i></button>
+                    <button type="button" id="btnMedium" class="btn btn-grey darken-2 btn-sm-i"><i class="mdi mdi-signal-cellular-2"></i></button>
+                    <button type="button" id="btnHigh" class="btn btn-grey darken-2 btn-sm-i"><i class="mdi mdi-fan"></i></button>
+            </div>`
     }
 });

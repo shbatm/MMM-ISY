@@ -1,0 +1,214 @@
+/* Customizations for Bootstrap-DIV based on Material Design for Bootstrap and Material Design Icons */
+div.bootstrap .mdi::before {
+  font-size: 24px;
+  line-height: 14px;
+}
+div.bootstrap .btn .mdi::before {
+  position: relative;
+  top: 4px;
+}
+div.bootstrap .btn-xs .mdi::before {
+  font-size: 18px;
+  top: 3px;
+}
+div.bootstrap .btn-sm .mdi::before {
+  font-size: 18px;
+  top: 3px;
+}
+div.bootstrap .dropdown-menu .mdi {
+  width: 18px;
+}
+div.bootstrap .dropdown-menu .mdi::before {
+  position: relative;
+  top: 4px;
+  left: -8px;
+}
+div.bootstrap .nav .mdi::before {
+  position: relative;
+  top: 4px;
+}
+div.bootstrap .navbar .navbar-toggle .mdi::before {
+  position: relative;
+  top: 4px;
+  color: #FFF;
+}
+div.bootstrap .breadcrumb .mdi::before {
+  position: relative;
+  top: 4px;
+}
+div.bootstrap .breadcrumb a:hover {
+  text-decoration: none;
+}
+div.bootstrap .breadcrumb a:hover span {
+  text-decoration: underline;
+}
+div.bootstrap .alert .mdi::before {
+  position: relative;
+  top: 4px;
+  margin-right: 2px;
+}
+div.bootstrap .input-group-addon .mdi::before {
+  position: relative;
+  top: 3px;
+}
+div.bootstrap .navbar-brand .mdi::before {
+  position: relative;
+  top: 2px;
+  margin-right: 2px;
+}
+div.bootstrap .list-group-item .mdi::before {
+  position: relative;
+  top: 3px;
+  left: -3px;
+}
+div.bootstrap .popover-header,
+div.bootstrap .popover-body {
+  background: #222;
+}
+div.bootstrap .bs-popover-auto[x-placement^=bottom] .arrow::after,
+div.bootstrap .bs-popover-bottom .arrow::after {
+  border-bottom-color: #222 !important;
+}
+div.bootstrap .bs-popover-auto[x-placement^=left] .arrow::after,
+div.bootstrap .bs-popover-left .arrow::after {
+  border-left-color: #222 !important;
+}
+div.bootstrap .bs-popover-auto[x-placement^=right] .arrow::after,
+div.bootstrap .bs-popover-right .arrow::after {
+  border-right-color: #222 !important;
+}
+div.bootstrap .bs-popover-auto[x-placement^=top] .arrow::after,
+div.bootstrap .bs-popover-top .arrow::after {
+  border-top-color: #222 !important;
+}
+div.bootstrap .bs-popover-auto[x-placement^=bottom] .popover-header::before,
+div.bootstrap .bs-popover-bottom .popover-header::before {
+  border-bottom-color: #222;
+}
+div.bootstrap .bs-popover-auto[x-placement^=right] .popover-body::before,
+div.bootstrap .bs-popover-right .popover-body::before {
+  border-right-color: #222;
+}
+div.bootstrap .bs-popover-auto[x-placement^=left] .popover-body::before,
+div.bootstrap .bs-popover-left .popover-body::before {
+  border-left-color: #222;
+}
+div.bootstrap .bs-popover-auto[x-placement^=top] .popover-body::before,
+div.bootstrap .bs-popover-top .popover-body::before {
+  border-top-color: #222;
+}
+div.bootstrap .irs-bar,
+div.bootstrap .irs-bar-edge {
+  background: #ffcc00;
+  background: linear-gradient(to top, #ffcc00 0%, #ffdb4d 100%);
+  border-color: #ffcc00;
+}
+div.bootstrap .irs-single {
+  background: #222222;
+}
+div.bootstrap .btn.btn-sm {
+  padding: 0.3rem 1rem;
+  font-size: 0.64rem;
+}
+div.bootstrap .btn.btn-sm-i {
+  padding: 0.5rem 0.5rem;
+  margin-top: 1rem;
+}
+div.bootstrap .popover [class^=col] {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+div.bootstrap .popover .close {
+  line-height: 0.5;
+}
+div.bootstrap .popover {
+  min-width: 210px;
+}
+div.bootstrap h3 {
+  font-weight: 300;
+}
+div.bootstrap .white-text {
+  color: #fff !important;
+}
+div.bootstrap .btn,
+div.bootstrap .btn:disabled:active,
+div.bootstrap .btn:disabled:focus,
+div.bootstrap .btn:disabled:hover {
+  -webkit-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+}
+div.bootstrap .btn-elegant:focus,
+div.bootstrap .btn-elegant:not([disabled]):not(.disabled):active,
+div.bootstrap .btn-elegant:not([disabled]):not(.disabled):active:focus,
+div.bootstrap .btn-grey:focus,
+div.bootstrap .btn-grey:not([disabled]):not(.disabled):active,
+div.bootstrap .btn-grey:not([disabled]):not(.disabled):active:focus,
+div.bootstrap .btn:active,
+div.bootstrap .btn:focus,
+div.bootstrap .btn:hover,
+div.bootstrap .btn:not([disabled]):not(.disabled):active {
+  -webkit-box-shadow: 0 5px 11px 0 rgba(0, 0, 0, 0.18), 0 4px 15px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: 0 5px 11px 0 rgba(0, 0, 0, 0.18), 0 4px 15px 0 rgba(0, 0, 0, 0.15);
+}
+div.bootstrap :disabled {
+  pointer-events: none !important;
+}
+div.bootstrap .btn {
+  padding: 0.84rem 2.14rem;
+  font-size: 0.81rem;
+  -webkit-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+  margin: 0.375rem;
+  border: 0;
+  -webkit-border-radius: 0.125rem;
+  border-radius: 0.125rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  white-space: normal;
+  word-wrap: break-word;
+  color: #fff;
+}
+div.bootstrap .btn:active,
+div.bootstrap .btn:focus,
+div.bootstrap .btn:hover {
+  outline: 0;
+}
+div.bootstrap .btn.btn-sm {
+  padding: 0.5rem 1.6rem;
+  font-size: 0.64rem;
+}
+div.bootstrap .btn-elegant {
+  background-color: #2e2e2e !important;
+  color: #fff !important;
+}
+div.bootstrap .btn-elegant:hover {
+  background-color: #3b3b3b;
+}
+div.bootstrap .btn-elegant:active,
+div.bootstrap .btn-elegant:focus {
+  background-color: #000;
+}
+div.bootstrap .btn-elegant:not([disabled]):not(.disabled):active {
+  background-color: #000 !important;
+}
+div.bootstrap .btn-grey {
+  background-color: #616161 !important;
+  color: #fff !important;
+}
+div.bootstrap .btn-grey:hover {
+  background-color: #6e6e6e;
+}
+div.bootstrap .btn-grey:active,
+div.bootstrap .btn-grey:focus {
+  background-color: #2e2e2e;
+}
+div.bootstrap .btn-grey:not([disabled]):not(.disabled):active {
+  background-color: #2e2e2e !important;
+}
+div.bootstrap .modal, div.bootstrap .modal-backdrop {
+    position: absolute !important;
+}
+div.bootstrap .modal-body {
+    background-color: #333;
+}
